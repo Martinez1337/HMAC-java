@@ -7,7 +7,7 @@ public class Base64Codec implements Codec {
     @Override
     public String encode(byte[] bytes) {
         if (bytes == null) {
-            throw new IllegalArgumentException("bytes must not be null");
+            throw new IllegalArgumentException("Bytes must not be null");
         }
         return Base64.getEncoder().encodeToString(bytes);
     }

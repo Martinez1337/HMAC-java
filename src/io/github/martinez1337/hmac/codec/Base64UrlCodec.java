@@ -7,7 +7,7 @@ public class Base64UrlCodec implements Codec {
     @Override
     public String encode(byte[] bytes) {
         if (bytes == null) {
-            throw new IllegalArgumentException("Passed null bytes arr reference");
+            throw new IllegalArgumentException("Bytes must not be null");
         }
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
