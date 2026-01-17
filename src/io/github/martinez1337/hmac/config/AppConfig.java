@@ -1,7 +1,7 @@
 package io.github.martinez1337.hmac.config;
 
 import com.google.gson.Gson;
-import io.github.martinez1337.hmac.codec.Base64Codec;
+import io.github.martinez1337.hmac.codec.Codec;
 import io.github.martinez1337.hmac.exception.ConfigLoadException;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -9,21 +9,23 @@ import java.io.FileReader;
 import java.security.Key;
 
 public class AppConfig {
-    private static final String CONFIG_PATH = "config.json";
-    private static ConfigData configData;
-    private static Key hmacKey;
+    private final ConfigData configData;
+    private final Key hmacKey;
 
-    static {
-        try (FileReader reader = new FileReader(CONFIG_PATH)) {
-            configData = new Gson().fromJson(reader, ConfigData.class);
+    public AppConfig(ConfigData data, Key hmacKey) {
+        this.configData = data;
+        this.hmacKey = hmacKey;
+    }
 
-            if (configData == null) {
-                throw new ConfigLoadException("Config file is empty");
-            }
-            configData.validate();
+    public static AppConfig loadFromFile(String path, Gson gson, Codec codec) {
+        try (FileReader reader = new FileReader(path)) {
+            ConfigData data = gson.fromJson(reader, ConfigData.class);
+            data.validate();
 
-            byte[] decodedKey = new Base64Codec().decode(configData.getSecret());
-            hmacKey = new SecretKeySpec(decodedKey, configData.getHmacAlg());
+            byte[] decodedKey = codec.decode(data.getSecret());
+            Key hmacKey = new SecretKeySpec(decodedKey, data.getHmacAlg());
+
+            return new AppConfig(data, hmacKey);
         } catch (IllegalArgumentException e) {
             throw new ConfigLoadException("Invalid data format: " + e.getMessage(), e);
         } catch (Exception e) {
@@ -31,19 +33,19 @@ public class AppConfig {
         }
     }
 
-    public static int getPort() {
+    public int getPort() {
         return configData.getListenPort();
     }
 
-    public static Key getHmacKey() {
+    public Key getHmacKey() {
         return hmacKey;
     }
 
-    public static String getAlgorithm() {
+    public String getAlgorithm() {
         return configData.getHmacAlg();
     }
 
-    public static long getMaxPayloadSize() {
+    public long getMaxPayloadSize() {
         return configData.getMaxMsgSizeBytes();
     }
 }
