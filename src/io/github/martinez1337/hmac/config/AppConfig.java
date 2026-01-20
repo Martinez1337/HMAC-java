@@ -45,7 +45,7 @@ public class AppConfig {
         return configData.getHmacAlg();
     }
 
-    public long getMaxPayloadSize() {
+    public long getMaxMsgSizeBytes() {
         return configData.getMaxMsgSizeBytes();
     }
 }

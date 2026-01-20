@@ -50,7 +50,7 @@ class AppConfigTest {
         assertAll("Config fields checking",
                 () -> assertEquals(8080, config.getPort()),
                 () -> assertEquals("HmacSHA256", config.getAlgorithm()),
-                () -> assertEquals(1024, config.getMaxPayloadSize()),
+                () -> assertEquals(1024, config.getMaxMsgSizeBytes()),
                 () -> assertNotNull(config.getHmacKey())
         );
     }
