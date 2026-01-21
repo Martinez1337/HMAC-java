@@ -1,6 +1,5 @@
 package io.github.martinez1337.hmac.config;
 
-import com.google.gson.Gson;
 import io.github.martinez1337.hmac.codec.Base64Codec;
 import io.github.martinez1337.hmac.exception.ConfigLoadException;
 import io.github.martinez1337.hmac.util.GsonFactory;
