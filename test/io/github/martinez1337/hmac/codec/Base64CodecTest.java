@@ -1,45 +1,79 @@
 package io.github.martinez1337.hmac.codec;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class Base64CodecTest extends CodecTest{
+class Base64CodecTest {
 
-    @Override
-    protected void initCodec() {
-        codec = new Base64Codec();
+    @ParameterizedTest
+    @EnumSource(Base64Codec.Mode.class)
+    void encode_nullBytes_throwsIllegalArgumentException(Base64Codec.Mode mode) {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> Base64Codec.encode(null, mode)
+        );
+        assertEquals("Bytes must not be null", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(Base64Codec.Mode.class)
+    void decode_nullString_throwsIllegalArgumentException(Base64Codec.Mode mode) {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> Base64Codec.decode(null, mode)
+        );
+        assertEquals("String is null or blank", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @EnumSource(Base64Codec.Mode.class)
+    void encodeDecode_roundTrip_matchesOriginalData(Base64Codec.Mode mode) {
+        byte[] original = "Round-trip data 123!".getBytes(StandardCharsets.UTF_8);
+
+        String encoded = Base64Codec.encode(original, mode);
+        byte[] decoded = Base64Codec.decode(encoded, mode);
+
+        assertArrayEquals(original, decoded);
     }
 
     @Test
-    void encode_validBytes_returnsBase64String() {
+    void standard_encode_returnsBase64String() {
         byte[] input = "Hello World".getBytes(StandardCharsets.UTF_8);
         String expected = "SGVsbG8gV29ybGQ=";
 
-        String result = codec.encode(input);
+        String result = Base64Codec.encode(input, Base64Codec.Mode.STANDARD);
 
-        assertEquals(expected, result, "The encoding result does not match the expected one");
+        assertEquals(expected, result);
     }
 
     @Test
-    void decode_validBase64String_returnsByteArray() {
-        String input = "SGVsbG8gV29ybGQ=";
-        byte[] expected = "Hello World".getBytes(StandardCharsets.UTF_8);
-
-        byte[] result = codec.decode(input);
-
-        assertArrayEquals(expected, result, "The decoded byte array does not match the original");
+    void standard_decode_invalidString_throwsIllegalArgumentException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> Base64Codec.decode("SG!VsbG8h@#", Base64Codec.Mode.STANDARD)
+        );
     }
 
     @Test
-    void decode_invalidBase64String_throwsIllegalArgumentException() {
-        // Символы '!' и '@' не входят в алфавит Base64
-        String invalidInput = "SG!VsbG8h@#";
+    void url_encode_returnsBase64UrlWithoutPadding() {
+        byte[] input = new byte[]{60, 63, 62, 63};
+        String expected = "PD8-Pw";
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            codec.decode(invalidInput);
-        }, "The method must throw an exception on invalid Base64 characters");
+        String result = Base64Codec.encode(input, Base64Codec.Mode.URL);
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void url_decode_invalidCharacters_throwsIllegalArgumentException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> Base64Codec.decode("SGVsbG8+V29ybGQ/", Base64Codec.Mode.URL)
+        );
     }
 }

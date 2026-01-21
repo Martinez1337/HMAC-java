@@ -1,14 +1,17 @@
 package io.github.martinez1337.hmac.config;
 
 import com.google.gson.Gson;
-import io.github.martinez1337.hmac.codec.Codec;
+import io.github.martinez1337.hmac.codec.Base64Codec;
 import io.github.martinez1337.hmac.exception.ConfigLoadException;
+import io.github.martinez1337.hmac.util.GsonFactory;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileReader;
 import java.security.Key;
 
 public class AppConfig {
+    public static final int JSON_OVER_HEAD_BYTES = 1024;
+
     private final ConfigData configData;
     private final Key hmacKey;
 
@@ -17,12 +20,12 @@ public class AppConfig {
         this.hmacKey = hmacKey;
     }
 
-    public static AppConfig loadFromFile(String path, Gson gson, Codec codec) {
+    public static AppConfig loadFromFile(String path) {
         try (FileReader reader = new FileReader(path)) {
-            ConfigData data = gson.fromJson(reader, ConfigData.class);
+            ConfigData data = GsonFactory.createDefault().fromJson(reader, ConfigData.class);
             data.validate();
 
-            byte[] decodedKey = codec.decode(data.getSecret());
+            byte[] decodedKey = Base64Codec.decode(data.getSecret(), Base64Codec.Mode.STANDARD);
             Key hmacKey = new SecretKeySpec(decodedKey, data.getHmacAlg());
 
             return new AppConfig(data, hmacKey);
@@ -47,5 +50,9 @@ public class AppConfig {
 
     public long getMaxMsgSizeBytes() {
         return configData.getMaxMsgSizeBytes();
+    }
+
+    public long getMaxPayloadSize() {
+        return configData.getMaxMsgSizeBytes() + JSON_OVER_HEAD_BYTES;
     }
 }

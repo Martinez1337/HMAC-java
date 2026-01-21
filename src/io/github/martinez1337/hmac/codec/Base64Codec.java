@@ -2,21 +2,46 @@ package io.github.martinez1337.hmac.codec;
 
 import java.util.Base64;
 
-public class Base64Codec implements Codec {
+public final class Base64Codec {
 
-    @Override
-    public String encode(byte[] bytes) {
-        if (bytes == null) {
-            throw new IllegalArgumentException("Bytes must not be null");
-        }
-        return Base64.getEncoder().encodeToString(bytes);
+    private Base64Codec() {}
+
+    public enum Mode {
+        STANDARD,
+        URL
     }
 
-    @Override
-    public byte[] decode(String str) {
-        if (str == null || str.isBlank()) {
+    public static String encode(byte[] bytes, Mode mode) {
+        requireBytes(bytes);
+        return encoder(mode).encodeToString(bytes);
+    }
+
+    public static byte[] decode(String str, Mode mode) {
+        requireString(str);
+        return decoder(mode).decode(str);
+    }
+
+    private static Base64.Encoder encoder(Mode mode) {
+        return switch (mode) {
+            case STANDARD -> Base64.getEncoder();
+            case URL -> Base64.getUrlEncoder().withoutPadding();
+        };
+    }
+
+    private static Base64.Decoder decoder(Mode mode) {
+        return switch (mode) {
+            case STANDARD -> Base64.getDecoder();
+            case URL -> Base64.getUrlDecoder();
+        };
+    }
+
+    private static void requireBytes(byte[] bytes) {
+        if (bytes == null) throw new IllegalArgumentException("Bytes must not be null");
+    }
+
+    private static void requireString(String str) {
+        if (str == null || str.isBlank())
             throw new IllegalArgumentException("String is null or blank");
-        }
-        return Base64.getDecoder().decode(str);
     }
 }
+

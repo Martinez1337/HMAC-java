@@ -15,16 +15,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class HmacServiceTest {
 
     private HmacService hmacService;
-    private Base64Codec base64Codec;
     private static final String ALGORITHM = "HmacSHA256";
 
     @BeforeEach
     void setUp() {
-        base64Codec = new Base64Codec();
-
         // Тестовый ключ из RFC 4231 в формате Base64
         String base64Key = "CwsLCwsLCwsLCwsLCwsLCwsLCws=";
-        byte[] decodedKey = base64Codec.decode(base64Key);
+        byte[] decodedKey = Base64Codec.decode(base64Key, Base64Codec.Mode.STANDARD);
 
         Key testKey = new SecretKeySpec(decodedKey, ALGORITHM);
         hmacService = new HmacService(testKey, ALGORITHM);
@@ -36,7 +33,7 @@ class HmacServiceTest {
         String expectedBase64 = "sDRMYdjbOFNcqK/OrwvxK4gdwgDJgz2nJuk3bC4yz/c=";
 
         byte[] signature = hmacService.sign(data);
-        String resultBase64 = base64Codec.encode(signature);
+        String resultBase64 = Base64Codec.encode(signature, Base64Codec.Mode.STANDARD);
 
         assertEquals(expectedBase64, resultBase64, "The signature must comply with the RFC 4231 standard");
     }
@@ -45,7 +42,7 @@ class HmacServiceTest {
     void verify_validSignature_returnsTrue() {
         byte[] data = "Hi There".getBytes(StandardCharsets.UTF_8);
         String validBase64Sig = "sDRMYdjbOFNcqK/OrwvxK4gdwgDJgz2nJuk3bC4yz/c=";
-        byte[] signature = base64Codec.decode(validBase64Sig);
+        byte[] signature = Base64Codec.decode(validBase64Sig, Base64Codec.Mode.STANDARD);
         boolean result = hmacService.verify(data, signature);
 
         assertTrue(result, "Verification must be successful for a valid signature");
