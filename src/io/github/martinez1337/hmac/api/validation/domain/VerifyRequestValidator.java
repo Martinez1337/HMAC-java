@@ -20,11 +20,9 @@ public class VerifyRequestValidator extends PredicateValidator<VerifyRequest> {
             new Rule<>(
                 req -> {
                     if (req.signature() == null || req.signature().isBlank()) {
-                        System.out.println("Here 1");
                         return true;
                     }
                     if (req.signature().getBytes().length > config.getSigMaxSizeBytes()) {
-                        System.out.println("Here 2 -> " + req.signature().getBytes().length);
                         return true;
                     }
                     return !req.signature().matches(BASE64_URL_REGEX);
