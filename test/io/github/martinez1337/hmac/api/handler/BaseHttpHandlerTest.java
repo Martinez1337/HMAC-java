@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,6 +45,7 @@ public abstract class BaseHttpHandlerTest {
         lenient().when(exchange.getResponseHeaders()).thenReturn(responseHeaders);
         lenient().when(exchange.getResponseBody()).thenReturn(outputStream);
         lenient().when(exchange.getRequestHeaders()).thenReturn(requestHeaders);
+        lenient().when(exchange.getRequestURI()).thenReturn(URI.create("/test"));
     }
 
     protected void setupRequest(String method, String contentType, String body) {
