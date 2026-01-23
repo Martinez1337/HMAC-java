@@ -35,11 +35,28 @@ class HmacServiceTest {
     }
 
     @Test
+    void sign_SameMsg_returnsSameSignature() {
+        String msg = "Hi There";
+        String result1 = hmacService.sign(msg);
+        String result2 = hmacService.sign(msg);
+
+        assertEquals(result1, result2, "The signing result must be deterministic");
+    }
+
+    @Test
     void verify_validSignature_returnsTrue() {
         String validBase64UrlSig = "sDRMYdjbOFNcqK_OrwvxK4gdwgDJgz2nJuk3bC4yz_c";
         boolean result = hmacService.verify("Hi There", validBase64UrlSig);
 
         assertTrue(result, "Verification must be successful for a valid signature");
+    }
+
+    @Test
+    void verify_invalidSignature_returnsFalse() {
+        String invalidBase64UrlSig = "sDRMYdjbOFNcqK_OrwvxK4gdwgDJgz2nJuk3bC4yz_3";
+        boolean result = hmacService.verify("Hi There", invalidBase64UrlSig);
+
+        assertFalse(result, "Verification must not be successful for an invalid signature");
     }
 
     @Test
