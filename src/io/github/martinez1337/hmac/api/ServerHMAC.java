@@ -19,30 +19,50 @@ public class ServerHMAC {
 
     public ServerHMAC(AppConfig appConfig) throws IOException {
         this.appConfig = appConfig;
-        this.httpServer = HttpServer.create(new InetSocketAddress(appConfig.getPort()), 0);
-        HmacService hmacService = new HmacService(appConfig.getHmacKey(), appConfig.getAlgorithm());
 
-        log.info("HmacService initialized with algorithm: {}", appConfig.getAlgorithm());
+        log.info("Initializing ServerHMAC on port {}...", appConfig.getPort());
 
-        httpServer.createContext("/sign", new SignatureHandler(hmacService, appConfig));
-        httpServer.createContext("/verify", new VerificationHandler(hmacService, appConfig));
+        try {
+            this.httpServer = HttpServer.create(new InetSocketAddress(appConfig.getPort()), 0);
+
+            HmacService hmacService = new HmacService(appConfig.getHmacKey(), appConfig.getAlgorithm());
+            log.info("HmacService successfully initialized. Algorithm: {}, Max Payload: {} bytes",
+                    appConfig.getAlgorithm(), appConfig.getMaxPayloadSize());
+
+            httpServer.createContext("/sign", new SignatureHandler(hmacService, appConfig));
+            log.debug("Context registered: /sign");
+
+            httpServer.createContext("/verify", new VerificationHandler(hmacService, appConfig));
+            log.debug("Context registered: /verify");
+
+        } catch (IOException e) {
+            log.error("Failed to initialize HttpServer on port {}: {}", appConfig.getPort(), e.getMessage());
+            throw e;
+        }
     }
 
     public void start() {
-        log.info("Starting server on port {}", appConfig.getPort());
+        log.info("Server is starting...");
         httpServer.start();
+        log.info("Server successfully started and listening on http://localhost:{}/", appConfig.getPort());
     }
 
     public void stop() {
-        log.info("Stopping server on port {}", appConfig.getPort());
+        log.info("Shutting down server on port {}...", appConfig.getPort());
         httpServer.stop(0);
+        log.info("Server stopped.");
     }
 
-    public static void main(String[] args) throws IOException {
-        AppConfig config = AppConfig.loadFromFile("config.json");
+    public static void main(String[] args) {
+        try {
+            log.info("Loading configuration...");
+            AppConfig config = AppConfig.loadFromFile("config.json");
 
-        ServerHMAC serverHMAC = new ServerHMAC(config);
-
-        serverHMAC.start();
+            ServerHMAC serverHMAC = new ServerHMAC(config);
+            serverHMAC.start();
+        } catch (Exception e) {
+            log.error("Fatal error during application startup", e);
+            System.exit(1);
+        }
     }
 }

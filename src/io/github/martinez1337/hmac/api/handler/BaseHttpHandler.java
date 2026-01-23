@@ -20,7 +20,7 @@ import java.util.Map;
 
 public abstract class BaseHttpHandler implements HttpHandler {
     protected static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-    private static final Logger log = LoggerFactory.getLogger(BaseHttpHandler.class);
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
     protected final Gson gson = GsonFactory.createDefault();
     protected final AppConfig appConfig;
@@ -32,13 +32,28 @@ public abstract class BaseHttpHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
-        switch(method) {
-            case "GET" -> handleGet(exchange);
-            case "POST" -> handlePost(exchange);
-            case "PUT" -> handlePut(exchange);
-            case "PATCH" -> handlePatch(exchange);
-            case "DELETE" -> handleDelete(exchange);
-            default -> sendError(exchange, ApiError.METHOD_NOT_ALLOWED);
+        String path = exchange.getRequestURI().getPath();
+
+        log.info("Processing {} request for path: {}", method, path);
+        try {
+            switch(method) {
+                case "GET" -> handleGet(exchange);
+                case "POST" -> handlePost(exchange);
+                case "PUT" -> handlePut(exchange);
+                case "PATCH" -> handlePatch(exchange);
+                case "DELETE" -> handleDelete(exchange);
+                default -> {
+                    log.warn("Method {} not allowed for {}", method, path);
+                    sendError(exchange, ApiError.METHOD_NOT_ALLOWED);
+                }
+            }
+        } catch (ApiException e) {
+            log.warn("API Error while handling request: {} (HTTP {})",
+                    e.getApiError().errorMessage(), e.getApiError().httpStatusCode());
+            sendError(exchange, e.getApiError());
+        } catch (Exception e) {
+            log.error("Unexpected server error during request processing", e);
+            sendResponse(exchange, "{\"error\":\"Internal server error\"}", 500);
         }
     }
 
@@ -66,9 +81,12 @@ public abstract class BaseHttpHandler implements HttpHandler {
         byte[] resp = text.getBytes(DEFAULT_CHARSET);
         h.getResponseHeaders().add("Content-Type", "application/json");
         h.sendResponseHeaders(rCode, resp.length);
+
         try (OutputStream os = h.getResponseBody()) {
             os.write(resp);
         }
+
+        log.info("Response sent. Status: {}, Payload size: {} bytes", rCode, resp.length);
     }
 
     protected void sendError(HttpExchange h, ApiError apiError) throws IOException {
@@ -77,13 +95,18 @@ public abstract class BaseHttpHandler implements HttpHandler {
     }
 
     protected byte[] validateAndRead(HttpExchange exchange) throws IOException {
+        log.debug("Validating technical headers and reading request body...");
         new HttpRequestValidator(appConfig).validate(exchange);
-        log.debug("Reading body");
+
         byte[] body = exchange.getRequestBody().readAllBytes();
+
         if (body.length > appConfig.getMaxPayloadSize()) {
+            log.warn("Request rejected: Body size {} bytes exceeds limit of {} bytes",
+                    body.length, appConfig.getMaxPayloadSize());
             throw new ApiException(ApiError.PAYLOAD_TOO_LARGE);
         }
-        log.debug("Body is valid");
+
+        log.debug("Body successfully read ({} bytes)", body.length);
         return body;
     }
 
@@ -91,7 +114,9 @@ public abstract class BaseHttpHandler implements HttpHandler {
         try {
             String body = new String(rawBody, StandardCharsets.UTF_8);
             T dto = gson.fromJson(body, clazz);
-            if (dto == null) throw new ApiException(ApiError.INVALID_JSON);
+            if (dto == null) {
+                throw new ApiException(ApiError.INVALID_JSON);
+            }
             return dto;
         } catch (JsonSyntaxException e) {
             throw new ApiException(ApiError.INVALID_JSON);

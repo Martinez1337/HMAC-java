@@ -21,21 +21,23 @@ public class HmacService implements SignatureService {
     public HmacService(Key key, String algorithm) {
         this.key = key;
         this.algorithm = algorithm;
+        log.info("HmacService initialized with algorithm: {}", algorithm);
     }
 
     @Override
     public String sign(String data) {
         if (data == null || data.isBlank()) {
-            log.warn("Attempted to sign null data");
-            throw new SigningException("Data to sign must not be null");
+            log.warn("Signing failed: input data is null or blank");
+            throw new SigningException("Data to sign must not be null or blank");
         }
-        byte[] msgBytes = data.getBytes(StandardCharsets.UTF_8);
-        log.debug("Signing data, size: {} bytes", msgBytes.length);
+
+        log.debug("Generating signature for data (size: {} bytes) using {}",
+                data.length(), algorithm);
 
         try {
             Mac mac = Mac.getInstance(algorithm);
             mac.init(key);
-            byte[] result = mac.doFinal(msgBytes);
+            byte[] result = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
             log.debug("Signature generated successfully");
             return Base64Codec.encode(result, Base64Codec.Mode.URL);
         } catch (GeneralSecurityException e) {
@@ -45,10 +47,14 @@ public class HmacService implements SignatureService {
 
     @Override
     public boolean verify(String data, String signature) {
-        if (data == null) {
-            log.warn("Verification failed: data or signature is null");
-            throw new SignatureVerificationException("Data to verify must not be null");
+        if (data == null || signature == null) {
+            log.warn("Verification rejected: missing data (is null: {}) or signature (is null: {})",
+                    data == null, signature == null);
+            throw new SignatureVerificationException("Data and signature must not be null");
         }
+
+        log.debug("Verifying signature for data (size: {} bytes)...", data.length());
+
         try {
             Mac mac = Mac.getInstance(algorithm);
             mac.init(key);
@@ -59,11 +65,14 @@ public class HmacService implements SignatureService {
             boolean isValid = MessageDigest.isEqual(signBytes, generatedSignature);
 
             if (isValid) {
-                log.debug("Signature verification PASSED");
+                log.debug("Signature verification successful");
             } else {
-                log.warn("Signature verification FAILED for data of size {} bytes", msgBytes.length);
+                log.warn("Signature verification failed: provided signature does not match");
             }
             return isValid;
+        } catch (IllegalArgumentException e) {
+            log.warn("Verification failed: invalid Base64Url encoding in signature");
+            return false;
         } catch (GeneralSecurityException e) {
             throw new SignatureVerificationException("Crypto provider error during verification", e);
         }
