@@ -10,6 +10,7 @@ import java.security.Key;
 
 public class AppConfig {
     public static final int JSON_OVER_HEAD_BYTES = 1024;
+    public static final int SIG_MAX_SIZE_BYTES = 44;
 
     private final ConfigData configData;
     private final Key hmacKey;
@@ -49,6 +50,10 @@ public class AppConfig {
 
     public long getMaxMsgSizeBytes() {
         return configData.getMaxMsgSizeBytes();
+    }
+
+    public long getSigMaxSizeBytes() {
+        return SIG_MAX_SIZE_BYTES;
     }
 
     public long getMaxPayloadSize() {

@@ -14,7 +14,7 @@ public class HttpRequestValidator extends PredicateValidator<HttpExchange> {
             new Rule<>(
                 exchange -> {
                     String ct = exchange.getRequestHeaders().getFirst("Content-Type");
-                    return ct == null || !ct.equalsIgnoreCase("application/json;charset=utf-8");
+                    return ct == null || !ct.equalsIgnoreCase("application/json");
                 },
                 ApiError.UNSUPPORTED_MEDIA_TYPE
             ),
