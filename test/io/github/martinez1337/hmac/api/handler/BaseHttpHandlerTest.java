@@ -1,10 +1,9 @@
-package io.github.martinez1337.hmac.http.handler;
+package io.github.martinez1337.hmac.api.handler;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
-import io.github.martinez1337.hmac.api.handler.BaseHttpHandler;
 import io.github.martinez1337.hmac.config.AppConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

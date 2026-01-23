@@ -53,7 +53,7 @@ class AppConfigTest {
     }
 
     @Test
-    void loadFromFile_codecThrowsException_throwsConfigLoadException() throws IOException {
+    void loadFromFile_invalidSecret_throwsConfigLoadException() throws IOException {
         Path configPath = tempDir.resolve("config.json");
         Files.writeString(configPath, "{\"secret\":\"\", \"hmacAlg\":\"HmacSHA256\"}");
 

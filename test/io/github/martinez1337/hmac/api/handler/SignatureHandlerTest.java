@@ -1,8 +1,7 @@
-package io.github.martinez1337.hmac.http.handler;
+package io.github.martinez1337.hmac.api.handler;
 
 import io.github.martinez1337.hmac.api.dto.SignRequest;
 import io.github.martinez1337.hmac.api.dto.SignResponse;
-import io.github.martinez1337.hmac.api.handler.SignatureHandler;
 import io.github.martinez1337.hmac.service.SignatureService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +16,8 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SignatureHandlerTest extends BaseHttpHandlerTest {
-    @Mock private SignatureService signatureService;
+    @Mock
+    private SignatureService signatureService;
 
     @BeforeEach
     void setUp() {
@@ -45,5 +45,16 @@ class SignatureHandlerTest extends BaseHttpHandlerTest {
         handler.handle(exchange);
 
         assertResponse(400, "invalid_message");
+    }
+
+    @Test
+    void handlePost_tooLargeMessage_sendsMessage() throws IOException {
+        String msg = "a".repeat((int) appConfig.getMaxMsgSizeBytes() + 1);
+        SignRequest req = new SignRequest(msg);
+        setupRequest("POST", BASE_CONTENT_TYPE, gson.toJson(req));
+
+        handler.handle(exchange);
+
+        assertResponse(413, "message_too_large");
     }
 }
