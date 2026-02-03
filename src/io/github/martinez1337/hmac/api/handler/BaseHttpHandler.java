@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import io.github.martinez1337.hmac.api.model.ErrorCode;
 import io.github.martinez1337.hmac.api.validation.technical.HttpRequestValidator;
 import io.github.martinez1337.hmac.config.AppConfig;
 import io.github.martinez1337.hmac.api.dto.ApiError;
@@ -44,7 +45,7 @@ public abstract class BaseHttpHandler implements HttpHandler {
                 case "DELETE" -> handleDelete(exchange);
                 default -> {
                     log.warn("Method {} not allowed for {}", method, path);
-                    sendError(exchange, ApiError.METHOD_NOT_ALLOWED);
+                    sendError(exchange, new ApiError(ErrorCode.METHOD_NOT_ALLOWED));
                 }
             }
         } catch (ApiException e) {
@@ -58,23 +59,23 @@ public abstract class BaseHttpHandler implements HttpHandler {
     }
 
     protected void handleGet(HttpExchange exchange) throws IOException {
-        sendError(exchange, ApiError.OPERATION_NOT_SUPPORTED);
+        sendError(exchange, new ApiError(ErrorCode.OPERATION_NOT_SUPPORTED));
     }
 
     protected void handlePost(HttpExchange exchange) throws IOException {
-        sendError(exchange, ApiError.OPERATION_NOT_SUPPORTED);
+        sendError(exchange, new ApiError(ErrorCode.OPERATION_NOT_SUPPORTED));
     }
 
     protected void handlePut(HttpExchange exchange) throws IOException {
-        sendError(exchange, ApiError.OPERATION_NOT_SUPPORTED);
+        sendError(exchange, new ApiError(ErrorCode.OPERATION_NOT_SUPPORTED));
     }
 
     protected void handlePatch(HttpExchange exchange) throws IOException {
-        sendError(exchange, ApiError.OPERATION_NOT_SUPPORTED);
+        sendError(exchange, new ApiError(ErrorCode.OPERATION_NOT_SUPPORTED));
     }
 
     protected void handleDelete(HttpExchange exchange) throws IOException {
-        sendError(exchange, ApiError.OPERATION_NOT_SUPPORTED);
+        sendError(exchange, new ApiError(ErrorCode.OPERATION_NOT_SUPPORTED));
     }
 
     protected void sendResponse(HttpExchange h, String text, int rCode) throws IOException {
@@ -103,7 +104,7 @@ public abstract class BaseHttpHandler implements HttpHandler {
         if (body.length > appConfig.getMaxPayloadSize()) {
             log.warn("Request rejected: Body size {} bytes exceeds limit of {} bytes",
                     body.length, appConfig.getMaxPayloadSize());
-            throw new ApiException(ApiError.PAYLOAD_TOO_LARGE);
+            throw new ApiException(new ApiError(ErrorCode.PAYLOAD_TOO_LARGE));
         }
 
         log.debug("Body successfully read ({} bytes)", body.length);
@@ -115,11 +116,11 @@ public abstract class BaseHttpHandler implements HttpHandler {
             String body = new String(rawBody, StandardCharsets.UTF_8);
             T dto = gson.fromJson(body, clazz);
             if (dto == null) {
-                throw new ApiException(ApiError.INVALID_JSON);
+                throw new ApiException(new ApiError(ErrorCode.INVALID_JSON));
             }
             return dto;
         } catch (JsonSyntaxException e) {
-            throw new ApiException(ApiError.INVALID_JSON);
+            throw new ApiException(new ApiError(ErrorCode.INVALID_JSON));
         }
     }
 }

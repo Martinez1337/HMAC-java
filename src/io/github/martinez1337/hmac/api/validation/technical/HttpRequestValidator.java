@@ -2,6 +2,7 @@ package io.github.martinez1337.hmac.api.validation.technical;
 
 import com.sun.net.httpserver.HttpExchange;
 import io.github.martinez1337.hmac.api.dto.ApiError;
+import io.github.martinez1337.hmac.api.model.ErrorCode;
 import io.github.martinez1337.hmac.api.validation.PredicateValidator;
 import io.github.martinez1337.hmac.api.validation.Rule;
 import io.github.martinez1337.hmac.config.AppConfig;
@@ -16,14 +17,14 @@ public class HttpRequestValidator extends PredicateValidator<HttpExchange> {
                     String ct = exchange.getRequestHeaders().getFirst("Content-Type");
                     return ct == null || !ct.equalsIgnoreCase("application/json");
                 },
-                ApiError.UNSUPPORTED_MEDIA_TYPE
+                new ApiError(ErrorCode.UNSUPPORTED_MEDIA_TYPE)
             ),
             new Rule<>(
                 exchange -> {
                     String cl = exchange.getRequestHeaders().getFirst("Content-Length");
                     return cl != null && Long.parseLong(cl) > config.getMaxPayloadSize();
                 },
-                ApiError.PAYLOAD_TOO_LARGE
+                new ApiError(ErrorCode.PAYLOAD_TOO_LARGE)
             )
         ));
     }

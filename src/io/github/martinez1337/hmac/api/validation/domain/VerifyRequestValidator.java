@@ -2,6 +2,7 @@ package io.github.martinez1337.hmac.api.validation.domain;
 
 import io.github.martinez1337.hmac.api.dto.ApiError;
 import io.github.martinez1337.hmac.api.dto.VerifyRequest;
+import io.github.martinez1337.hmac.api.model.ErrorCode;
 import io.github.martinez1337.hmac.api.validation.PredicateValidator;
 import io.github.martinez1337.hmac.api.validation.Rule;
 import io.github.martinez1337.hmac.config.AppConfig;
@@ -15,28 +16,30 @@ public class VerifyRequestValidator extends PredicateValidator<VerifyRequest> {
         super(List.of(
             new Rule<>(
                 req -> req.msg() == null || req.msg().isBlank(),
-                new ApiError(400, "invalid_message")
+                new ApiError(ErrorCode.INVALID_MESSAGE)
             ),
             new Rule<>(
-                req -> {
-                    if (req.signature() == null || req.signature().isBlank()) {
-                        return true;
-                    }
-                    if (req.signature().getBytes().length > config.getSigMaxSizeBytes()) {
-                        return true;
-                    }
-                    return !req.signature().matches(BASE64_URL_REGEX);
-                },
-                new ApiError(400, "invalid_signature_format")
+                req -> isSigValid(req, config),
+                new ApiError(ErrorCode.INVALID_SIGNATURE_FORMAT)
             ),
             new Rule<>(
                 req -> req.totalLength()  > config.getMaxPayloadSize(),
-                new ApiError(413, "body_too_large")
+                new ApiError(ErrorCode.PAYLOAD_TOO_LARGE, "body_too_large")
             ),
             new Rule<>(
                 req -> req.msg().getBytes().length > config.getMaxMsgSizeBytes(),
-                new ApiError(413, "message_too_large")
+                new ApiError(ErrorCode.PAYLOAD_TOO_LARGE, "message_too_large")
             )
         ));
+    }
+
+    private static boolean isSigValid(VerifyRequest req, AppConfig config) {
+        if (req.signature() == null || req.signature().isBlank()) {
+            return true;
+        }
+        if (req.signature().getBytes().length > config.getSigMaxSizeBytes()) {
+            return true;
+        }
+        return !req.signature().matches(BASE64_URL_REGEX);
     }
 }
